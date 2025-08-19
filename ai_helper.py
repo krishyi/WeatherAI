@@ -11,9 +11,9 @@ class WeatherAI:
 
     def extract_info(self, query): #This will tell the AI what information is needed, determining data such as the date and location
         prompt=f"""
-        Extract location and date from this weather query:
+        Extracts location and date from query:
         "{query}"
-        Respond ONLY in this JSON format:
+        Responds in this JSON format:
         {{"location": "city name or null", "date": "YYYY-MM-DD or null"}}
         """
         try: #Asks the AI to find the location and date in the question, and instructs it to use the JSON format
@@ -36,7 +36,7 @@ class WeatherAI:
             metrics=format_weather_data(weather)
             noaa_context=f"NOAA weather data: {metrics}" if metrics else ""
 
-        #Prepares answer for the user, if data is available
+        #Prepares answer for the user, if data is available, comments used to demonstrate the AI's logic
         if noaa_context:
             prompt = f"""
             [ROLE] You're a meteorologist with access to NOAA data.
@@ -77,3 +77,4 @@ if __name__ == "__main__":
     ai = WeatherAI()
 
     ai.chat_interface()
+
