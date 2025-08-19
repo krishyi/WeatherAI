@@ -59,7 +59,6 @@ class WeatherAI:
     def chat_interface(self):
         print("Weather AI (type 'quit' to exit)\n") #Prints a basic prompt with examples for the user to input
         print("You can ask questions such as:")
-        print("- What was the weather like in New York on July 4 2019?")
         print("- Explain how hurricanes form")
         print("- Compare summer temperatures in Chicago and Miami\n")
 
@@ -76,4 +75,5 @@ class WeatherAI:
 
 if __name__ == "__main__":
     ai = WeatherAI()
+
     ai.chat_interface()
