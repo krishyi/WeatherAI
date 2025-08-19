@@ -60,6 +60,7 @@ class WeatherAI:
         print("Weather AI (type 'quit' to exit)\n") #Prints a basic prompt with examples for the user to input
         print("You can ask questions such as:")
         print("- Explain how hurricanes form")
+        print("- Was it rainy in Seattle on May 15, 2021?")
         print("- Compare summer temperatures in Chicago and Miami\n")
 
         while True: #continues chatting until the user quits
@@ -77,4 +78,5 @@ if __name__ == "__main__":
     ai = WeatherAI()
 
     ai.chat_interface()
+
 
