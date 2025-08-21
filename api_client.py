@@ -7,6 +7,7 @@ class NOAAAPIClient:
         self.base_url=Config.NOAA_BASE_URL #api website
         self.headers={"token":Config.NOAA_API_TOKEN} #pass for noaa
         self.realtime_url = "https://api.weather.gov/"
+        
     def get_available_datasets(self): #Ask NOAA's server for a list of datasets
         response=requests.get(
             f"{self.base_url}datasets", #address for datasets
@@ -14,6 +15,7 @@ class NOAAAPIClient:
             timeout=10
         )
         return response.json().get('results', []) #gets the list
+        
     def get_weather_data(self, location, start, end=None):
         end=end if end else start #if there is no end date, use start date
         params={
@@ -64,3 +66,4 @@ class NOAAAPIClient:
         except Exception as e:
             print(f"Location search error: {str(e)}") #if no location, error is logged
             return None
+
