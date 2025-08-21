@@ -1,3 +1,4 @@
+
 def format_weather_data(weather_json): #used to process noaa api response into specific data
     if not weather_json or not isinstance(weather_json, dict) or 'results' not in weather_json: #validates input
         return None
@@ -33,3 +34,4 @@ def format_weather_data(weather_json): #used to process noaa api response into s
         metrics['precipitation']=sum(precip_records)/len(precip_records) #divide so that correct precip data given
     metrics['dates']=set(sorted(list(metrics['dates'])))
     return metrics if metrics['dates'] else None
+
