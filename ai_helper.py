@@ -1,55 +1,112 @@
 import ollama
 from src.api_client import NOAAAPIClient
 from src.utils import format_weather_data
-import re
+import json
 
 class WeatherAI:
     def __init__(self):
-        self.client=NOAAAPIClient() #sets up noaa client and ai model
-        self.model="mistral" #confirms that mistral is used
-        self.conversation_history=[] #stores history
+        self.client = NOAAAPIClient()
+        self.model = "mistral"
+        self.conversation_history = []
 
-    def extract_info(self, query): #This will tell the AI what information is needed, determining data such as the date and location
-        prompt=f"""
-        Extracts location and date from query:
-        "{query}"
-        Responds in this JSON format:
-        {{"location": "city name or null", "date": "YYYY-MM-DD or null"}}
-        """
-        try: #Asks the AI to find the location and date in the question, and instructs it to use the JSON format
-            response=ollama.generate(model=self.model, prompt=prompt, format='json')
-            return response
-        except Exception as e: #error handling
+    def extract_info(self, query):
+        prompt = f'Extract location and date from "{query}". Return JSON: {{"location": "city or null", "date": "YYYY-MM-DD or null"}}'
+        try:
+            response = ollama.chat(
+                model=self.model,
+                messages=[{'role': 'user', 'content': prompt}]
+            )
+            content = response['message']['content'].strip()
+
+            #clean up the response to extract JSON
+            if '```' in content:
+                # extract from code blocks
+                parts = content.split('```')
+                for part in parts:
+                    part = part.strip()
+                    if part.startswith('json'):
+                        content = part[4:].strip()
+                        break
+                    elif part.startswith('{'):
+                        content = part
+                        break
+
+            #remove any leading text before the JSON
+            if not content.startswith('{'):
+                json_start = content.find('{')
+                if json_start != -1:
+                    content = content[json_start:]
+
+            result = json.loads(content)
+
+            #validates the result
+            if not isinstance(result, dict):
+                raise ValueError("Result is not a dictionary")
+
+            #ensures we have the expected keys with proper null handling
+            location = result.get('location')
+            date = result.get('date')
+
+            #converts null to none
+            if location == "null" or location == "":
+                location = None
+            if date == "null" or date == "":
+                date = None
+
+            print(f"Extracted location='{location}', date='{date}'")
+            return {"location": location, "date": date}
+
+        except Exception as e:
             print(f"Error extracting info: {e}")
+            print(f"Raw response was: {content if 'content' in locals() else 'No content'}")
             return {"location": None, "date": None}
 
-    def generate_response(self, query): #Generates an intelligent response based on query
-        #Checks if user has mentioned a location or a date
-        info=self.extract_info(query)
-        location=info.get('location')
-        date=info.get('date')
+    def generate_response(self, query):
+        print(f"Processing query: '{query}'")
 
-        #Determines if weather data can be retrieved to fit the users prompt
-        noaa_context=""
-        if location and date:
-            weather=self.client.get_weather_data(location, date)
-            metrics=format_weather_data(weather)
-            noaa_context=f"NOAA weather data: {metrics}" if metrics else ""
+        #extract location and date information
+        info = self.extract_info(query)
+        location_name = info.get('location')
+        date = info.get('date')
 
-        #Prepares answer for the user, if data is available, comments used to demonstrate the AI's logic
+        print(f"Extracted info - Location: {location_name}, Date: {date}")
+
+        noaa_context = ""
+        if location_name and date:
+            print(f"Searching for locations matching '{location_name}'")
+
+            # gets proper location ID from NOAA
+            locations = self.client.get_locations(location_name)
+
+            if locations:
+                location_id = locations[0]['id']
+                location_display = locations[0]['name']
+                print(f"Found location: {location_display} (ID: {location_id})")
+
+                #Gets weather data from NOAA
+                print(f"Fetching weather data for {location_id} on {date}")
+                weather = self.client.get_weather_data(location_id, date)
+
+                if weather:
+                    print(f"Raw weather data received: {len(weather.get('results', []))} records")
+                    metrics = format_weather_data(weather)
+                    if metrics:
+                        print(f"Formatted metrics: {metrics}")
+                        noaa_context = f"NOAA weather data for {location_display} on {date}: {metrics}"
+                    else:
+                        print("No metrics after formatting")
+                else:
+                    print("No weather data received from NOAA")
+            else:
+                print(f"No locations found for '{location_name}'")
+
+        #based on the data the ai generates a response
         if noaa_context:
-            prompt = f"""
-            [ROLE] You're a meteorologist with access to NOAA data.
-            [DATA] {noaa_context}
-            [QUESTION] {query}
-            Answer using the data when possible, supplement with your knowledge.
-            """
-        else: #Provides a detailed answer even if exact data is not available, using estimates
-            prompt = f""" 
-            [ROLE] You're a weather expert.
-            [QUESTION] {query}
-            Provide a detailed, scientific answer about weather patterns.
-            """
+            prompt = f"You're a meteorologist. Use this data to answer: {noaa_context} Question: {query}"
+        else:
+            prompt = f"You're a weather expert for: {query}"
+
+        print("Generating AI response...")
         response = ollama.chat(
             model=self.model,
             messages=[{'role': 'user', 'content': prompt}]
@@ -57,26 +114,27 @@ class WeatherAI:
         return response['message']['content']
 
     def chat_interface(self):
-        print("Weather AI (type 'quit' to exit)\n") #Prints a basic prompt with examples for the user to input
+        print("Weather AI (type 'quit' to exit)\n")
         print("You can ask questions such as:")
         print("- Explain how hurricanes form")
-        print("- Was it rainy in Seattle on May 15, 2021?")
+        print("- Was it rainy in Seattle on May 15, 2024?")
         print("- Compare summer temperatures in Chicago and Miami\n")
 
-        while True: #continues chatting until the user quits
+        while True:
             query=input("\nYour weather question: ").strip()
             if query.lower() in ['quit', 'exit']:
                 break
             if not query:
                 continue
-            response=self.generate_response(query) #Produces AI responsee and prints it
+
+            response=self.generate_response(query)
             print("\nAI Response:")
             print(response)
 
 
 if __name__ == "__main__":
     ai = WeatherAI()
-
     ai.chat_interface()
+
 
 
