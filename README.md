@@ -7,4 +7,8 @@
 6. If the AI is not able to gather data for a certain date, try the format YYYY-DD-MM (ex. May 15 2023 -> 2023-05-15)
 7. In case data after 2021 is not available, close terminal, reopen, and redo steps 2-4. This should fix the issue.
 8. If you have any questions about my code, please feel free to contact me at kkapoor1@umbc.edu
+
+Sample Responses:
+(Q1: Was it rainy in Seattle on May 15, 2022?)
+(Q2: Compare summer temperatures in Miami and Seattle)
 <img width="1912" height="972" alt="image" src="https://github.com/user-attachments/assets/29f2a51d-2d0d-4112-a0b5-c7d94ddcea5a" />
