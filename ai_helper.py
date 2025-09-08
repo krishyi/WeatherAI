@@ -18,9 +18,9 @@ class WeatherAI:
             )
             content=response['message']['content'].strip()
 
-            #clean up the response to extract JSON
+            #Clean up the response to extract JSON
             if '```' in content:
-                # extract from code blocks
+                #Extract from code blocks
                 parts=content.split('```')
                 for part in parts:
                     part=part.strip()
@@ -31,7 +31,7 @@ class WeatherAI:
                         content=part
                         break
 
-            #remove any leading text before the JSON
+            #Remove any leading text before the JSON
             if not content.startswith('{'):
                 json_start=content.find('{')
                 if json_start!=-1:
@@ -39,7 +39,7 @@ class WeatherAI:
 
             result=json.loads(content)
 
-            #validates the result
+            #Validates the result
             if not isinstance(result, dict):
                 raise ValueError("Result is not a dictionary")
 
@@ -135,6 +135,7 @@ class WeatherAI:
 if __name__ == "__main__":
     ai = WeatherAI()
     ai.chat_interface()
+
 
 
 
